@@ -10,24 +10,31 @@ export default (
   app.use(bodyParser.urlencoded({ extended: false }));
 
   app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      '*'
+    );
 
     res.setHeader(
       'Access-Control-Allow-Methods',
       'GET,POST,PUT,PATCH,OPTIONS,DELETE'
     );
 
+    next();
+  });
+
+  app.use((req, res, next) => {
     if (
       req.path !== '/' &&
       !req.path.endsWith('/')
     ) {
-      const query = req.url.includes('?')
-        ? req.url.slice(req.url.indexOf('?'))
+      const q = req.url.includes('?')
+        ? req.url.substring(req.url.indexOf('?'))
         : '';
 
       return res.redirect(
         301,
-        req.path + '/' + query
+        req.path + '/' + q
       );
     }
 
@@ -53,28 +60,28 @@ export default (
     );
   });
 
-  const handler = (req, res) => {
+  const reqHandler = (req, res) => {
     const addr =
       req.method === 'POST'
         ? req.body.addr
         : req.query.addr;
 
     http.get(addr, response => {
-      let result = '';
+      let data = '';
 
       response.on('data', chunk => {
-        result += chunk;
+        data += chunk;
       });
 
       response.on('end', () => {
-        res.send(result);
+        res.send(data);
       });
     });
   };
 
-  app.get('/req/', handler);
+  app.get('/req/', reqHandler);
 
-  app.post('/req/', handler);
+  app.post('/req/', reqHandler);
 
   app.all('*', (req, res) => {
     res.send('ladyxxa');
