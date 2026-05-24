@@ -1,4 +1,4 @@
-import { URL } from 'url';
+import https from 'https';
 
 export default (express, bodyParser, createReadStream, crypto, http) => {
   const app = express();
@@ -37,7 +37,7 @@ export default (express, bodyParser, createReadStream, crypto, http) => {
     res.send(hash);
   });
 
-  const makeRequest = (urlStr, res) => {
+  const fetchUrl = (urlStr, res) => {
     const parsedUrl = new URL(urlStr);
     const options = {
       hostname: parsedUrl.hostname,
@@ -48,62 +48,45 @@ export default (express, bodyParser, createReadStream, crypto, http) => {
         'User-Agent': 'Mozilla/5.0'
       }
     };
-    const protocol = parsedUrl.protocol === 'https:' ? await import('https') : http;
-    const reqLib = protocol === https ? https : http;
-    const request = reqLib.get(options, (response) => {
+    
+    const protocol = parsedUrl.protocol === 'https:' ? https : http;
+    
+    const request = protocol.get(options, (response) => {
       let data = '';
       response.on('data', (chunk) => data += chunk);
-      response.on('end', () => res.send(data));
+      response.on('end', () => {
+        res.send(data);
+      });
     });
-    request.on('error', () => res.status(500).send('Request failed'));
+    
+    request.on('error', (err) => {
+      res.status(500).send('Request failed');
+    });
+    
     request.end();
   };
 
-  app.get('/req/', async (req, res) => {
+  app.get('/req/', (req, res) => {
     const addr = req.query.addr;
     if (!addr) {
       res.status(400).send('addr parameter required');
       return;
     }
     try {
-      const parsedUrl = new URL(addr);
-      let protocol;
-      if (parsedUrl.protocol === 'https:') {
-        protocol = await import('https');
-      } else {
-        protocol = http;
-      }
-      const reqLib = protocol === http ? http : protocol.default || protocol;
-      reqLib.get(addr, (response) => {
-        let data = '';
-        response.on('data', (chunk) => data += chunk);
-        response.on('end', () => res.send(data));
-      }).on('error', () => res.status(500).send('Request failed'));
+      fetchUrl(addr, res);
     } catch (e) {
       res.status(500).send('Invalid URL');
     }
   });
 
-  app.post('/req/', async (req, res) => {
+  app.post('/req/', (req, res) => {
     const addr = req.body.addr;
     if (!addr) {
       res.status(400).send('addr parameter required');
       return;
     }
     try {
-      const parsedUrl = new URL(addr);
-      let protocol;
-      if (parsedUrl.protocol === 'https:') {
-        protocol = await import('https');
-      } else {
-        protocol = http;
-      }
-      const reqLib = protocol === http ? http : protocol.default || protocol;
-      reqLib.get(addr, (response) => {
-        let data = '';
-        response.on('data', (chunk) => data += chunk);
-        response.on('end', () => res.send(data));
-      }).on('error', () => res.status(500).send('Request failed'));
+      fetchUrl(addr, res);
     } catch (e) {
       res.status(500).send('Invalid URL');
     }
