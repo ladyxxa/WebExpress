@@ -1,11 +1,7 @@
 import express from 'express';
-
 import bodyParser from 'body-parser';
-
 import { createReadStream } from 'fs';
-
 import crypto from 'crypto';
-
 import http from 'http';
 
 import appSrc from './app.js';
@@ -18,5 +14,4 @@ const app = appSrc(
   http
 );
 
-const port = process.env.PORT || 3000;
-app.listen(port);
+app.listen(process.env.PORT);
